@@ -25,7 +25,7 @@ pub struct IlocBox {
 const MAX_ILOC_EXTENTS_PER_ITEM: u16 = 32;
 
 impl ParseBody<IlocBox> for IlocBox {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn parse_body(remain: &[u8], header: FullBoxHeader) -> IResult<&[u8], IlocBox> {
         let version = header.version;
 
@@ -60,6 +60,7 @@ impl ParseBody<IlocBox> for IlocBox {
 
             let (remain, extent_count) = be_u16(remain)?;
             if extent_count > MAX_ILOC_EXTENTS_PER_ITEM {
+                #[cfg(feature = "tracing")]
                 tracing::debug!(?extent_count, "extent_count");
                 context("extent_count > 32", fail::<_, (), _>)(remain)?;
             }

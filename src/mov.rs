@@ -156,7 +156,7 @@ pub fn parse_mov_metadata<R: Read + Seek>(reader: R) -> crate::Result<Vec<(Strin
     parse_metadata(reader)
 }
 
-#[tracing::instrument(skip_all)]
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 fn extract_moov_body<R: Read + Seek>(mut reader: R) -> Result<(FileType, Vec<u8>), crate::Error> {
     const INIT_BUF_SIZE: usize = 4096;
     const GROW_BUF_SIZE: usize = 4096;
@@ -181,6 +181,7 @@ fn extract_moov_body<R: Read + Seek>(mut reader: R) -> Result<(FileType, Vec<u8>
             Ok(range) => break range.start + offset..range.end + offset,
             Err(Error::Need(n)) => n,
             Err(Error::Skip(n)) => {
+                #[cfg(feature = "tracing")]
                 tracing::debug!(?n, "skip");
                 reader.seek(std::io::SeekFrom::Current(n as i64))?;
                 offset = buf.len();
@@ -189,6 +190,7 @@ fn extract_moov_body<R: Read + Seek>(mut reader: R) -> Result<(FileType, Vec<u8>
             Err(Error::ParseFailed(e)) => return Err(e),
         };
 
+        #[cfg(feature = "tracing")]
         tracing::debug!(?to_read, "to_read");
         assert!(to_read > 0);
 
@@ -259,7 +261,7 @@ pub enum Error {
 /// moov atom it may contain.
 ///
 /// Regarding error handling, please refer to [Error] for more information.
-#[tracing::instrument(skip_all)]
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 fn extract_moov_body_from_buf(input: &[u8]) -> Result<Range<usize>, Error> {
     // parse metadata from moov/meta/keys & moov/meta/ilst
     let remain = input;
@@ -276,6 +278,7 @@ fn extract_moov_body_from_buf(input: &[u8]) -> Result<Range<usize>, Error> {
     let mut to_skip = 0;
     let mut skipped = 0;
     let (remain, header) = travel_header(remain, |h, remain| {
+        #[cfg(feature = "tracing")]
         tracing::debug!(?h.box_type, ?h.box_size, "Got");
         if h.box_type == "moov" {
             // stop travelling

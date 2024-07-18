@@ -65,7 +65,7 @@ impl ParseBody<MetaBox> for MetaBox {
 }
 
 impl MetaBox {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn exif_data<'a>(&self, input: &'a [u8]) -> IResult<&'a [u8], Option<&'a [u8]>> {
         self.iinf
             .as_ref()
@@ -87,9 +87,11 @@ impl MetaBox {
                     }
                 } else if construction_method == 1 {
                     // idat offset
+                    #[cfg(feature = "tracing")]
                     tracing::debug!("idat offset construction method is not supported yet");
                     fail(input)
                 } else {
+                    #[cfg(feature = "tracing")]
                     tracing::debug!("item offset construction method is not supported yet");
                     fail(input)
                 }

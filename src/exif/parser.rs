@@ -149,12 +149,12 @@ struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn parse_ifd(&'a self, pos: usize) -> IResult<&'a [u8], Option<ImageFileDirectory>> {
         self.parse_ifd_recursively(pos, 1)
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn parse_ifd_recursively(
         &'a self,
         pos: usize,
@@ -163,6 +163,7 @@ impl<'a> Parser<'a> {
         // Prevent stack overflow caused by infinite recursion, which will
         // occur when running fuzzing tests.
         if depth > MAX_IFD_DEPTH {
+            #[cfg(feature = "tracing")]
             tracing::error!(?depth, "Too many nested IFDs. Parsing aborted.");
             return fail(&self.data[pos..]); // Safe-slice
         }
@@ -202,7 +203,7 @@ impl<'a> Parser<'a> {
         Ok((remain, Some(ImageFileDirectory { entries })))
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn parse_ifd_entry(&self, pos: usize, depth: usize) -> IResult<&[u8], Option<DirectoryEntry>> {
         let input = self.data;
         let endian = self.endian;

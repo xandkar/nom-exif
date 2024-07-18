@@ -61,7 +61,7 @@ pub(crate) struct InfeBox {
 }
 
 impl ParseBody<InfeBox> for InfeBox {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn parse_body<'a>(remain: &'a [u8], header: FullBoxHeader) -> IResult<&'a [u8], InfeBox> {
         let version = header.version;
 
@@ -80,6 +80,7 @@ impl ParseBody<InfeBox> for InfeBox {
             }),
         )(remain)?;
 
+        #[cfg(feature = "tracing")]
         tracing::debug!(?header.box_type, ?item_type, ?version, "Got");
 
         let (remain, item_name) = parse_cstr(remain).map_err(|e| {

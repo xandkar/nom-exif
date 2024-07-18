@@ -49,7 +49,7 @@ pub struct BoxHeader {
 }
 
 impl BoxHeader {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn parse<'a>(input: &'a [u8]) -> IResult<&'a [u8], BoxHeader> {
         let (remain, size) = number::streaming::be_u32(input)?;
 
@@ -78,17 +78,20 @@ impl BoxHeader {
         }
 
         if box_size > (MAX_BODY_LEN + header_size) as u64 {
-            let box_type = box_type
-                .chars()
-                .map(|c| {
-                    if c.is_ascii_graphic() {
-                        c.as_char()
-                    } else {
-                        '*'
-                    }
-                })
-                .collect::<String>();
-            tracing::error!(?box_type, ?box_size, "Box is too big");
+            #[cfg(feature = "tracing")]
+            {
+                let box_type = box_type
+                    .chars()
+                    .map(|c| {
+                        if c.is_ascii_graphic() {
+                            c.as_char()
+                        } else {
+                            '*'
+                        }
+                    })
+                    .collect::<String>();
+                tracing::error!(?box_type, ?box_size, "Box is too big");
+            }
             return fail(remain);
         }
 
@@ -154,10 +157,11 @@ pub struct BoxHolder<'a> {
 }
 
 impl<'a> BoxHolder<'a> {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], BoxHolder<'a>> {
         let (_, header) = BoxHeader::parse(input)?;
         let (remain, data) = streaming::take(header.box_size)(input)?;
+        #[cfg(feature = "tracing")]
         tracing::debug!(?header.box_type, data_len = ?data.len(), "Got");
 
         Ok((remain, BoxHolder { header, data }))

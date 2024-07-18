@@ -48,7 +48,7 @@ use crate::{
 ///     .collect::<Vec<_>>()
 /// );
 /// ```
-#[tracing::instrument(skip_all)]
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 pub fn parse_heif_exif<R: Read + Seek>(mut reader: R) -> crate::Result<Option<Exif>> {
     const INIT_BUF_SIZE: usize = 4096;
     const GROW_BUF_SIZE: usize = 1024;
@@ -76,6 +76,7 @@ pub fn parse_heif_exif<R: Read + Seek>(mut reader: R) -> crate::Result<Option<Ex
             Err(e) => Err(e)?,
         };
 
+        #[cfg(feature = "tracing")]
         tracing::debug!(bytes = ?to_read, "to_read");
         assert!(to_read > 0);
 

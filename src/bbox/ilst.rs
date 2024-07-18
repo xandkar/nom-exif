@@ -83,7 +83,7 @@ impl IlstItem {
 
 /// Parse ilst item data to value, see [Well-known
 /// types](https://developer.apple.com/documentation/quicktime-file-format/well-known_types)
-#[tracing::instrument(skip(data))]
+#[cfg_attr(feature = "tracing", tracing::instrument(skip(data)))]
 fn parse_value(type_code: u32, data: &[u8]) -> crate::Result<EntryValue> {
     use EntryValue::*;
     let v = match type_code {
@@ -99,6 +99,7 @@ fn parse_value(type_code: u32, data: &[u8]) -> crate::Result<EntryValue> {
             8 => be_i64(data)?.1.into(),
             data_len => {
                 let data_type = "BE Signed Integer";
+                #[cfg(feature = "tracing")]
                 tracing::error!(data_type, data_len, "Invalid ilst item data.");
                 let msg = format!(
                     "Invalid ilst item data; \
@@ -115,6 +116,7 @@ fn parse_value(type_code: u32, data: &[u8]) -> crate::Result<EntryValue> {
             8 => be_u64(data)?.1.into(),
             data_len => {
                 let data_type = "BE Unsigned Integer";
+                #[cfg(feature = "tracing")]
                 tracing::error!(data_type, data_len, "Invalid ilst item data.");
                 let msg = format!(
                     "Invalid ilst item data; \
@@ -127,6 +129,7 @@ fn parse_value(type_code: u32, data: &[u8]) -> crate::Result<EntryValue> {
         24 => be_f64(data)?.1.into(),
         data_type => {
             let msg = format!("Unsupported ilst item data type");
+            #[cfg(feature = "tracing")]
             tracing::error!(data_type, "{}.", msg);
             return Err(format!("{}: {data_type}", msg).into());
         }

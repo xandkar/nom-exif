@@ -121,7 +121,7 @@ fn find_exif_segment(input: &[u8]) -> IResult<&[u8], Option<Segment<'_>>> {
     }
 }
 
-#[tracing::instrument(skip_all)]
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 fn travel_until<'a, F>(input: &'a [u8], mut predicate: F) -> IResult<&'a [u8], Segment<'a>>
 where
     F: FnMut(&Segment<'a>) -> bool,
@@ -134,6 +134,7 @@ where
         // Sanity check
         assert!(rem.len() < remain.len());
         remain = rem;
+        #[cfg(feature = "tracing")]
         tracing::debug!(?segment.marker_code, "Got segment.");
 
         if predicate(&segment) {
